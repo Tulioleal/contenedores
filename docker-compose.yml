@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    # Construye la imagen usando el Dockerfile en el directorio actual
+    build: .
+    # Mapea el puerto del host (8080) al puerto interno del contenedor (5000)
+    ports:
+      - "8080:${APP_PORT:-5000}" # Lee APP_PORT o usa 5000 por defecto
+    restart: always
+    # Variables de entorno para la aplicación
+    environment:
+      # Sobreescribe el puerto si se desea. Usamos el valor por defecto en la app.py
+      APP_PORT: 5000 
+      # Nombre del host de Redis (coincide con el nombre del servicio 'redis')
+      REDIS_HOST: redis 
+      # Puedes añadir REDIS_PASSWORD si el servidor Redis lo requiere:
+      # REDIS_PASSWORD: mi-super-clave
+    # Espera a que Redis esté "saludable" antes de iniciar
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    # Imagen oficial de Redis
+    image: redis:7.2-alpine
+    restart: always
+    # Health check para Redis (verifica que el comando PING funcione)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 5

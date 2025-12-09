@@ -10,6 +10,10 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 # Etapa 2: Runtime
 FROM python:3.11-slim
 
+# Instalar curl para el Health Check
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copiar solo las dependencias instaladas desde la etapa builder
@@ -24,5 +28,10 @@ RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
 EXPOSE 5000
+
+# Health Check
+# Utiliza el endpoint /health que verifica la conexión a Redis
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
 
 CMD ["python", "app.py"]
